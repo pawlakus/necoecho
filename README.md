@@ -44,22 +44,26 @@ make
 
 Alpine Linux 3.18, muslc statically linked
 ```
-export CPPFLAGS='-D_GNU_SOURCE -static'
-make && strip necoecho
+CPPFLAGS='-D_GNU_SOURCE -static' make
 ```
 
 Ubuntu 20.04
 ```
-export CPPFLAGS='-Wl,--no-as-needed -ldl'
-make && strip necoecho
+CPPFLAGS='-Wl,--no-as-needed -ldl' make
 ```
 
 Ubuntu 22.04
 ```
-make && strip necoecho
+make
 ```
 
 Debian 12
 ```
-make && strip necoecho
+make
+```
+
+## Run as non-root on any port (Linux)
+
+```
+setcap cap_net_bind_service=ep necoecho
 ```
