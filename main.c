@@ -2,6 +2,7 @@
 #include <unistd.h>  
 #include <string.h>  
 #include <stdio.h> 
+#include <arpa/inet.h>
 #include "neco/neco.h"
 
 // Global
@@ -41,7 +42,8 @@ void client(int argc, void *argv[]) {
     char buf[4096];
     int64_t read_deadline;
     int64_t write_deadline;
-    printf("client connected\n");
+    int64_t id = neco_getid();
+    fprintf(stderr, "coro %lld started\n", id);
     read_deadline = neco_now() + 5 * NECO_SECOND;
     while (1) {
         // Read into buf
@@ -59,27 +61,32 @@ void client(int argc, void *argv[]) {
         }
 
         // too much data? disconnect the client
-        if (total > 4096) {
-            printf("too much data\n");
+        if (total >= 4096) {
+            fprintf(stderr, "coro %lld, too much data\n", id);
             break;
         }
     }
-    printf("client disconnected, bytes: %d\n", total);
+    fprintf(stderr, "coro %lld finished, bytes: %d\n", id, total);
     close(conn);
 }
 
 // Usage
 void usage() {
-    printf("Usage: %s localhost 9000\n\n", program);
+    fprintf(stdout, "Usage: %s localhost 9000\n\n", program);
     exit(1);
 }
 
 // main()
 int neco_main(int argc, char *argv[]) {
+    int64_t id = neco_getid();
     size_t len = 0;
     char *name = NULL;
     char *port = NULL;
     char *listens = NULL;
+    int err;
+    struct sockaddr_storage addr;
+    socklen_t addrlen = sizeof(addr);
+    char ipstr[INET6_ADDRSTRLEN];
  
     // parsing arguments
     program = argv[0];
@@ -98,11 +105,27 @@ int neco_main(int argc, char *argv[]) {
         perror("neco_serve");
         exit(1);
     }
-    printf("listening at %s\n", listens);
+    fprintf(stderr, "listening at %s\n", listens);
     while (1) {
-        int conn = neco_accept(ln, 0, 0);
+        int conn = neco_accept(ln, (struct sockaddr *)&addr, &addrlen);
         if (conn > 0) {
-            neco_start(client, 1, &conn);
+            // check client IP address
+            if (addr.ss_family == AF_INET) {
+                // IPv4 address
+                struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+                inet_ntop(AF_INET, &(s->sin_addr), ipstr, sizeof(ipstr));
+            } else if (addr.ss_family == AF_INET6) {
+                // IPv6 address
+                struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
+                inet_ntop(AF_INET6, &(s->sin6_addr), ipstr, sizeof(ipstr));
+            }
+            fprintf(stderr, "coro %lld, accepted client %s\n", id, ipstr);
+            // spawn coroutine handler
+            err = neco_start(client, 1, &conn);
+            if (err != NECO_OK) {
+                fprintf(stderr, "fatal: unable to start coroutine: %s\n", neco_strerror(err));
+                close(conn);
+            }
         }
     }
     close(ln);
