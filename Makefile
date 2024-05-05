@@ -4,7 +4,7 @@ CFLAGS += $(CPPFLAGS)
 
 SOURCES = main.c neco/neco.c
 OBJECTS = $(SOURCES:.c=.o)
-EXECUTABLE = echo
+EXECUTABLE = necoecho
 
 all: $(EXECUTABLE)
 

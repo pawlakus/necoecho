@@ -24,6 +24,6 @@ Can be used as a simple TCP target for your Load Balancer TCP checks.
 You must specify listening interface and port number. There is no default value:
 
 ```
-$ ./echo 0.0.0.0 9000
+$ ./necoecho 0.0.0.0 9000
 listening at 0.0.0.0:9000
 ```
