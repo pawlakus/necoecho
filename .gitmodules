@@ -1,0 +1,3 @@
+[submodule "neco"]
+	path = neco
+	url = https://github.com/tidwall/neco.git
