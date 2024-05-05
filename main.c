@@ -2,6 +2,7 @@
 #include <unistd.h>  
 #include <string.h>  
 #include <stdio.h> 
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include "neco/neco.h"
 
@@ -43,7 +44,7 @@ void client(int argc, void *argv[]) {
     int64_t read_deadline;
     int64_t write_deadline;
     int64_t id = neco_getid();
-    fprintf(stderr, "coro %lld started\n", id);
+    fprintf(stderr, "coro %" PRIx64 " started\n", id);
     read_deadline = neco_now() + 5 * NECO_SECOND;
     while (1) {
         // Read into buf
@@ -62,11 +63,11 @@ void client(int argc, void *argv[]) {
 
         // too much data? disconnect the client
         if (total >= 4096) {
-            fprintf(stderr, "coro %lld, too much data\n", id);
+            fprintf(stderr, "coro %" PRIx64 " too much data\n", id);
             break;
         }
     }
-    fprintf(stderr, "coro %lld finished, bytes: %d\n", id, total);
+    fprintf(stderr, "coro %" PRIx64 " finished, bytes: %d\n", id, total);
     close(conn);
 }
 
@@ -119,7 +120,7 @@ int neco_main(int argc, char *argv[]) {
                 struct sockaddr_in6 *s = (struct sockaddr_in6 *)&addr;
                 inet_ntop(AF_INET6, &(s->sin6_addr), ipstr, sizeof(ipstr));
             }
-            fprintf(stderr, "coro %lld, accepted client %s\n", id, ipstr);
+            fprintf(stderr, "coro %" PRIx64 " accepted client %s\n", id, ipstr);
             // spawn coroutine handler
             err = neco_start(client, 1, &conn);
             if (err != NECO_OK) {
