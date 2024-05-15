@@ -36,15 +36,22 @@ void xfree(void *ptr) {
 
 // Handler for new clients
 void client(int argc, void *argv[]) {
-    int conn = *(int*)argv[0];
+    int conn; // argv[0]
+    char ipstr[INET6_ADDRSTRLEN]; // argv[1]
     int total = 0;
     ssize_t nbytes;
     ssize_t ret;
     char buf[4096];
     int64_t read_deadline;
     int64_t write_deadline;
-    int64_t id = neco_getid();
-    fprintf(stderr, "coro %" PRIx64 " started\n", id);
+    int64_t id;
+
+    // copy argv
+    conn = *(int*)argv[0];
+    strncpy(ipstr, argv[1], INET6_ADDRSTRLEN);
+    // coro id
+    id = neco_getid();
+    fprintf(stderr, "coro %" PRIx64 " started for %s\n", id, ipstr);
     read_deadline = neco_now() + 5 * NECO_SECOND;
     while (1) {
         // Read into buf
@@ -122,7 +129,7 @@ int neco_main(int argc, char *argv[]) {
             }
             fprintf(stderr, "coro %" PRIx64 " accepted client %s\n", id, ipstr);
             // spawn coroutine handler
-            err = neco_start(client, 1, &conn);
+            err = neco_start(client, 2, &conn, &ipstr);
             if (err != NECO_OK) {
                 fprintf(stderr, "fatal: unable to start coroutine: %s\n", neco_strerror(err));
                 close(conn);
